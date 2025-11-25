@@ -1,0 +1,5 @@
+{
+  "name": "Spartan AI Orchestrator",
+  "description": "A high-efficiency DevSecOps control interface for the Spartan AI Workforce. Monitors workflows, executes notebooks via Gemini, and manages decision gates.",
+  "requestFramePermissions": []
+}
