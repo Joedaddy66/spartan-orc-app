@@ -37,7 +37,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const isBusy = orchestratorState === OrchestratorState.ANALYZING || 
                  orchestratorState === OrchestratorState.EXECUTING || 
-                 orchestratorState === OrchestratorState.WIRING;
+                 orchestratorState === OrchestratorState.WIRING ||
+                 orchestratorState === OrchestratorState.STRESS_TEST;
 
   // Generate ASCII progress bar
   const getAsciiProgress = (val: number) => {
@@ -46,6 +47,12 @@ export const Terminal: React.FC<TerminalProps> = ({
     const empty = bars - filled;
     return `[${'█'.repeat(filled)}${'.'.repeat(empty)}] ${Math.round(val)}%`;
   };
+
+  // Determine header dot color
+  let statusDotColor = 'bg-spartan-500 animate-pulse';
+  if (orchestratorState === OrchestratorState.WIRING) statusDotColor = 'bg-blue-500 animate-pulse';
+  if (orchestratorState === OrchestratorState.STRESS_TEST) statusDotColor = 'bg-orange-500 animate-ping';
+  if (orchestratorState === OrchestratorState.ANALYZING) statusDotColor = 'bg-spartan-accent animate-pulse-slow';
 
   return (
     <div className="flex flex-col h-[60vh] lg:h-full bg-spartan-900 border border-spartan-800 rounded-lg overflow-hidden shadow-2xl">
@@ -56,7 +63,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           <span className="text-xs font-mono font-bold tracking-wider">SPARTAN_CORE_V1.2</span>
         </div>
         <div className="flex items-center space-x-2">
-          <span className={`h-2 w-2 rounded-full ${orchestratorState === OrchestratorState.IDLE ? 'bg-spartan-500 animate-pulse' : 'bg-spartan-accent animate-pulse-slow'}`}></span>
+          <span className={`h-2 w-2 rounded-full ${statusDotColor}`}></span>
           <span className="text-xs font-mono text-gray-400">{orchestratorState}</span>
         </div>
       </div>
@@ -104,12 +111,21 @@ export const Terminal: React.FC<TerminalProps> = ({
            <div className="flex justify-start">
              <div className="bg-spartan-950/80 border border-spartan-800 text-spartan-400 p-3 rounded-lg rounded-bl-none flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
-                   <Loader2 size={16} className={`animate-spin ${orchestratorState === OrchestratorState.WIRING ? 'text-blue-500' : 'text-spartan-500'}`} />
-                   <span className={orchestratorState === OrchestratorState.WIRING ? 'text-blue-400 animate-pulse' : ''}>
-                     {orchestratorState === OrchestratorState.WIRING ? 'Establishing secure uplink...' : 'Analyzing input parameters...'}
+                   <Loader2 size={16} className={`animate-spin ${
+                       orchestratorState === OrchestratorState.WIRING ? 'text-blue-500' : 
+                       orchestratorState === OrchestratorState.STRESS_TEST ? 'text-orange-500' : 'text-spartan-500'
+                   }`} />
+                   <span className={
+                       orchestratorState === OrchestratorState.WIRING ? 'text-blue-400 animate-pulse' : 
+                       orchestratorState === OrchestratorState.STRESS_TEST ? 'text-orange-400 animate-pulse' : ''
+                   }>
+                     {orchestratorState === OrchestratorState.WIRING ? 'Establishing secure uplink...' : 
+                      orchestratorState === OrchestratorState.STRESS_TEST ? 'RUNNING LOAD SIMULATION...' : 'Analyzing input parameters...'}
                    </span>
                 </div>
-                {(orchestratorState === OrchestratorState.WIRING || orchestratorState === OrchestratorState.EXECUTING) && (
+                {(orchestratorState === OrchestratorState.WIRING || 
+                  orchestratorState === OrchestratorState.EXECUTING || 
+                  orchestratorState === OrchestratorState.STRESS_TEST) && (
                     <div className="text-[10px] font-mono text-gray-500 whitespace-pre">
                         {getAsciiProgress(progress)}
                     </div>

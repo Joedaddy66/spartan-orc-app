@@ -83,6 +83,62 @@ const App: React.FC = () => {
     };
     setMessages(prev => [...prev, userMsg]);
 
+    // --- INTERCEPT: STRESS TEST SIMULATION ---
+    if (lowerInput.includes("stress test") || lowerInput.includes("process 100") || lowerInput.includes("load test")) {
+        setOrchestratorState(OrchestratorState.STRESS_TEST);
+        
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'model',
+            text: "⚠️ INITIATING STRESS TEST PROTOCOL.\nTarget: 100 Async Background Jobs\nLoad Profile: EXTREME",
+            timestamp: new Date()
+        }]);
+
+        // Spike CPU initially
+         setMetrics(prev => prev.map(m => 
+             m.label === 'Server Load' ? { ...m, value: '88%', trend: 'up', change: 400 } : m
+         ));
+
+        for (let i = 1; i <= 100; i++) {
+            setProgress(i);
+            // Faster delay than smoke test
+            await new Promise(r => setTimeout(r, 40)); 
+
+            // Dynamic CPU jitter
+            if (i % 10 === 0) {
+                 setMetrics(prev => prev.map(m => 
+                     m.label === 'Server Load' ? { ...m, value: `${85 + Math.floor(Math.random() * 14)}%` } : m
+                 ));
+            }
+
+            // High frequency logs
+            if (i % 5 === 0) {
+                 setLogs(prev => [{
+                    id: Date.now().toString(),
+                    timestamp: new Date().toLocaleTimeString(),
+                    level: 'INFO',
+                    source: 'WORKER_POOL',
+                    message: `Processed Job #${Date.now().toString().slice(-4)}-${i} [OK]`
+                }, ...prev.slice(0, 15)]);
+            }
+        }
+
+        // Cool down
+        setMetrics(prev => prev.map(m => 
+             m.label === 'Server Load' ? { ...m, value: '12%', trend: 'down', change: -2 } : m
+         ));
+
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'model',
+            text: "✅ Stress Test Complete.\n• Throughput: 100 Jobs/4s\n• Peak Load: 99%\n• Error Rate: 0.00%\n• Stability: CONFIRMED",
+            timestamp: new Date()
+        }]);
+        
+        setOrchestratorState(OrchestratorState.IDLE);
+        return;
+    }
+
     // --- INTERCEPT: SMOKE TEST SIMULATION ---
     if (lowerInput.includes("smoke test") || lowerInput.includes("validate pipeline") || lowerInput.includes("deploy infra")) {
         setOrchestratorState(OrchestratorState.EXECUTING);

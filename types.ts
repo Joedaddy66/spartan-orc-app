@@ -61,5 +61,6 @@ export enum OrchestratorState {
   EXECUTING = 'EXECUTING',
   AWAITING_DECISION = 'AWAITING_DECISION',
   SYNCING = 'SYNCING',
-  WIRING = 'WIRING' // New state for agent actions
+  WIRING = 'WIRING', // New state for agent actions
+  STRESS_TEST = 'STRESS_TEST' // High load simulation
 }

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Metric, DriveFile, Commit, OrchestratorState } from '../types';
-import { TrendingUp, TrendingDown, Minus, HardDrive, FileText, Activity, GitBranch, GitCommit, CheckCircle, Clock, Zap, Cpu, Terminal, ShieldCheck, Lock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, HardDrive, FileText, Activity, GitBranch, GitCommit, CheckCircle, Clock, Zap, Cpu, Terminal, ShieldCheck, Lock, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // --- Metric Card ---
@@ -72,34 +72,56 @@ export const AgentStatus: React.FC<{ state: OrchestratorState; progress: number 
   const isWiring = state === OrchestratorState.WIRING;
   const isThinking = state === OrchestratorState.ANALYZING;
   const isExecuting = state === OrchestratorState.EXECUTING;
+  const isStress = state === OrchestratorState.STRESS_TEST;
 
-  const showProgress = isWiring || isExecuting;
+  const showProgress = isWiring || isExecuting || isStress;
+
+  // Visual Styles based on State
+  let ringColor = 'border-spartan-500';
+  let shadow = 'shadow-[0_0_10px_rgba(16,185,129,0.2)]';
+  let iconColor = 'text-spartan-500';
+  let statusColor = 'text-spartan-500';
+  let statusText = state === OrchestratorState.IDLE ? 'ONLINE' : state;
+
+  if (isWiring) {
+    ringColor = 'border-blue-500';
+    shadow = 'shadow-[0_0_15px_rgba(59,130,246,0.5)]';
+    iconColor = 'text-blue-400';
+    statusColor = 'text-blue-400 animate-pulse';
+  } else if (isThinking) {
+    ringColor = 'border-spartan-accent';
+    shadow = 'shadow-[0_0_15px_rgba(245,158,11,0.3)]';
+    iconColor = 'text-spartan-accent';
+    statusColor = 'text-spartan-accent';
+  } else if (isStress) {
+    ringColor = 'border-orange-500';
+    shadow = 'shadow-[0_0_20px_rgba(249,115,22,0.6)]';
+    iconColor = 'text-orange-500';
+    statusColor = 'text-orange-500 animate-pulse';
+    statusText = 'HIGH LOAD EVENT';
+  }
 
   return (
     <div className="bg-spartan-900 border border-spartan-800 p-4 rounded-lg flex flex-col justify-center relative overflow-hidden min-h-[100px] transition-all duration-300">
       {/* Background Pulse Effect */}
       <div className={`absolute inset-0 bg-spartan-500/5 ${isWiring ? 'animate-pulse' : 'hidden'}`}></div>
+      <div className={`absolute inset-0 bg-orange-500/10 ${isStress ? 'animate-pulse' : 'hidden'}`}></div>
       
       <div className="flex items-center justify-between z-10 w-full">
         <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                isWiring ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 
-                isThinking ? 'border-spartan-accent shadow-[0_0_15px_rgba(245,158,11,0.3)]' :
-                'border-spartan-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-            }`}>
-                <Cpu size={24} className={`transition-colors duration-300 ${
-                    isWiring ? 'text-blue-400' : isThinking ? 'text-spartan-accent' : 'text-spartan-500'
-                }`} />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${ringColor} ${shadow}`}>
+                {isStress ? (
+                    <AlertTriangle size={24} className={`transition-colors duration-300 ${iconColor} animate-bounce`} />
+                ) : (
+                    <Cpu size={24} className={`transition-colors duration-300 ${iconColor}`} />
+                )}
             </div>
             <div>
             <h3 className="text-sm font-bold text-white tracking-wide">SPARTAN AGENT</h3>
             <p className="text-[10px] text-gray-400 font-mono uppercase flex items-center gap-2">
                 STATUS: 
-                <span className={`font-bold ${
-                isWiring ? 'text-blue-400 animate-pulse' :
-                isThinking ? 'text-spartan-accent' : 'text-spartan-500'
-                }`}>
-                {state === OrchestratorState.IDLE ? 'ONLINE' : state}
+                <span className={`font-bold ${statusColor}`}>
+                {statusText}
                 </span>
             </p>
             </div>
@@ -107,6 +129,7 @@ export const AgentStatus: React.FC<{ state: OrchestratorState; progress: number 
 
         <div className="z-10">
             {isWiring && <Zap size={20} className="text-blue-400 animate-bounce" />}
+            {isStress && <Activity size={20} className="text-orange-500 animate-spin" />}
         </div>
       </div>
 
@@ -114,12 +137,18 @@ export const AgentStatus: React.FC<{ state: OrchestratorState; progress: number 
       {showProgress && (
         <div className="mt-4 w-full z-10 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
-                <span>{isWiring ? 'WIRING INFRASTRUCTURE...' : 'EXECUTING WORKFLOW...'}</span>
+                <span>
+                    {isWiring ? 'WIRING INFRASTRUCTURE...' : 
+                     isStress ? 'PROCESSING BATCH JOBS...' : 'EXECUTING WORKFLOW...'}
+                </span>
                 <span>{Math.round(progress)}%</span>
             </div>
             <div className="w-full h-1.5 bg-spartan-950 rounded-full overflow-hidden border border-spartan-800">
                 <div 
-                    className={`h-full transition-all duration-300 ease-out ${isWiring ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-spartan-500'}`}
+                    className={`h-full transition-all duration-100 ease-out ${
+                        isWiring ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 
+                        isStress ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'bg-spartan-500'
+                    }`}
                     style={{ width: `${progress}%` }}
                 ></div>
             </div>
